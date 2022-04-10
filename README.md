@@ -1,9 +1,10 @@
 # kanban-board
-using react
+- Using React
+- Ref from Hacker Rank
 
 # Installation
 - npm install
-- For local development: npm run start 
+- For dev: npm run start 
 - For test: npm run test
 - For build: npm run build
 

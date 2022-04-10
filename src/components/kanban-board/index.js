@@ -1,5 +1,7 @@
 import React, { Component } from "react";
-import "./index.css";
+import { Button, Input } from 'antd';
+import { Card, Col, Row, Typography, Space, Layout, message } from 'antd';
+import { VerticalCard } from "../VerticalCard";
 
 export default class KanbanBoard extends Component {
   constructor() {
@@ -8,29 +10,44 @@ export default class KanbanBoard extends Component {
     // Therefore, when you perform any operation on tasks, make sure you pick tasks by names (primary key) instead of any kind of index or any other attribute.
     this.state = {
       tasks: [
-        { name: 'Update user', stage: 0 },
-        { name: 'Delete user', stage: 0 },
+        { name: '1', stage: 0 },
+        { name: '2', stage: 0 },
       ],
-      name: ''
+      name: '',
+      loading: false
     };
     this.stagesNames = ['Backlog', 'To Do', 'In Progress', 'Completed'];
     this.createTask = this.createTask.bind(this);
     this.onDelete = this.onDelete.bind(this);
+    this.confirm = this.confirm.bind(this);
   }
 
   createTask() {
-    this.setState(prevState => ({
-      tasks: [...prevState.tasks, { name: this.state.name, stage: 1 }]
-    }))
+    if (this.state.name) {
+      if (this.state.tasks.find(item => item.name === this.state.name)) {
+        message.error(`Task ${this.state.name} is already exist.`);
+      } else {
+        this.setState({ loading: true });
+        setTimeout(() => {
+          this.setState(prevState => ({
+            tasks: [...prevState.tasks, { name: this.state.name, stage: 1 }]
+          }));
+          message.success(`Task ${this.state.name} is created successfully.`);
+          this.setState({ name: '' });
+          this.setState({ loading: false });
+        }, 1000);
+      }
+    } else {
+      message.info(`Task name is required.`);
+    }
   }
 
 
   onDelete(task) {
-    console.log(task)
-    //  update stage here
     this.setState({
       tasks: this.state.tasks.filter(item => item.name !== task.name)
-    })
+    });
+    message.info(`Task ${task.name} is deleted successfully.`);
   }
 
   updateStage(task, isNext) {
@@ -49,6 +66,10 @@ export default class KanbanBoard extends Component {
     this.setState({ name: e.target.value });
   }
 
+  confirm(task) {
+    this.onDelete(task);
+  }
+
   render() {
     const { tasks } = this.state;
 
@@ -62,48 +83,48 @@ export default class KanbanBoard extends Component {
     }
 
     return (
-      <div className="mt-20 layout-column justify-content-center align-items-center">
-        <section className="mt-50 layout-row align-items-center justify-content-center">
-          <input onChange={(e) => { this.handleChange(e) }} id="create-task-input" type="text" className="large" placeholder="New task name" data-testid="create-task-input" />
-          <button type="submit" className="ml-30" data-testid="create-task-button" onClick={this.createTask}>Create task</button>
-        </section>
-        <section>
-          <div className="small">Each task is uniquely identified by its name</div>
-        </section>
+      <Layout style={{ flex: 1, height: "100%", width: "100%", padding: 20 }}>
+        <Space direction="horizontal">
+          <Input
+            placeholder="Enter task name"
+            type={"text"}
+            id="name"
+            name="name"
+            value={this.state.name}
+            onChange={(e) => { e.preventDefault(); this.handleChange(e) }}
+          />
+          <Button
+            type="primary"
+            shape="round"
+            onClick={this.createTask}
+            loading={this.state.loading}>
+            Create Task
+          </Button>
+        </Space>
+        <Col style={{ marginTop: 4, marginBottom: 20 }}>
+          <Typography.Text style={{ fontSize: 12 }}>
+            Each task is uniquely identified by its name
+          </Typography.Text>
+        </Col>
 
-        <div className="mt-50 layout-row">
+        <Row gutter={16}>
           {stagesTasks.map((tasks, i) => {
             return (
-              <div className="card outlined ml-20 mt-0" key={`${i}`}>
-                <div className="p-4 bg-color-red"></div>
-                <div className="card-text">
-                  <h4>{this.stagesNames[i]}</h4>
-                  <ul className="styled mt-50" data-testid={`stage-${i}`}>
-                    {tasks.map((task, index) => {
-                      return <li className="slide-up-fade-in" key={`${i}${index}`}>
-                        <div className="li-content layout-row justify-content-between align-items-center">
-                          <span data-testid={`${task.name.split(' ').join('-')}-name`}>{task.name}</span>
-                          <div className="icons">
-                            <button disabled={task.stage === 0} onClick={() => this.updateStage(task, false)} className="icon-only x-small mx-2" data-testid={`${task.name.split(' ').join('-')}-back`}>
-                              <i className="material-icons">arrow_back</i>
-                            </button>
-                            <button disabled={task.stage === 3} onClick={() => this.updateStage(task, true)} className="icon-only x-small mx-2" data-testid={`${task.name.split(' ').join('-')}-forward`}>
-                              <i className="material-icons">arrow_forward</i>
-                            </button>
-                            <button onClick={() => this.onDelete(task)} className="icon-only danger x-small mx-2" data-testid={`${task.name.split(' ').join('-')}-delete`}>
-                              <i className="material-icons">delete</i>
-                            </button>
-                          </div>
-                        </div>
-                      </li>
-                    })}
-                  </ul>
-                </div>
-              </div>
+              <Col span={6} key={i.toString()}>
+                <Card title={this.stagesNames[i]} bordered={false}>
+                  {tasks.map((task, idx) => <VerticalCard
+                    idx={idx}
+                    task={task}
+                    onDelete={(task) => this.confirm(task)}
+                    updateStage={(task, flag) => this.updateStage(task, flag)}
+                  />
+                  )}
+                </Card>
+              </Col>
             )
           })}
-        </div>
-      </div>
+        </Row>
+      </Layout>
     );
   }
 }
